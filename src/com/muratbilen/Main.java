@@ -1,28 +1,67 @@
 package com.muratbilen;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.Scanner;
+
 public class Main {
 
     private static final String key = "Bar12345Bar12345";
     private static final String initVector = "RandomInitVector";
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
+        System.out.println("Please press the necessary number to proceed ");
+        System.out.println("1-AES password encryption");
+        System.out.println("2-SHA-256 password hashing");
+        System.out.println("3-SHA-512 password hashing");
+        System.out.println("4-MD5 password hashing");
+        System.out.println("5-PBKDF2WithHmacSHA1 hashing");
+        Scanner sc = new Scanner(System.in);
+        int selection = sc.nextInt();
+        switch (selection)
+        {
+            case 1:
 
-        System.out.println("Please enter the encrytion type: ");
+        }
+
         //todo ADD MENU
         String result= encryptAES(key,initVector,"some random text");
         System.out.println(decryptAES(key,initVector,result));
-        System.out.println(Sha256Encryption("random"));
+        System.out.println(getSha256("random"));
         System.out.println(getMd5("randomized"));
+        System.out.println();
         //todo check if sha_512 method works properly or not
-        System.out.println(get_SHA_512("randomized","saltbae"));
+        System.out.println(getSha512("random","saltbae"));
+        try {
+            System.out.println(getPBKDF2WithHmacSHA1("random"));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
     }
+    private static byte[] getSalt() throws NoSuchAlgorithmException
+    {
+        //Always use a SecureRandom generator
+        SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
+        //Create array for salt
+        byte[] salt = new byte[16];
+        //Get a random salt
+        sr.nextBytes(salt);
+        //return salt
+        return salt;
+    }
+
     public static String encryptAES(String key, String initVector, String value)
     {
         try {
@@ -59,7 +98,7 @@ public class Main {
 
         return null;
     }
-    public static String Sha256Encryption(String value)
+    public static String getSha256(String value)
     {
         try{
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -70,7 +109,7 @@ public class Main {
         }
 
     }
-    public static String get_SHA_512(String passwordToHash, String salt){
+    public static String getSha512(String passwordToHash, String salt){
         String generatedPassword = null;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-512");
@@ -119,7 +158,18 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+    private static String getPBKDF2WithHmacSHA1(String password) throws NoSuchAlgorithmException, InvalidKeySpecException
+    {
+        int iterations = 1000;
+        char[] chars = password.toCharArray();
+        byte[] salt = getSalt();
 
-//TODO ADD PBKDF AND HMAC-SHA1 HERE
+        PBEKeySpec spec = new PBEKeySpec(chars, salt, iterations, 64 * 8);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        byte[] hash = skf.generateSecret(spec).getEncoded();
+        return iterations + ":" + bytesToHex(salt) + ":" + bytesToHex(hash);
+
+    }
+
 
 }
