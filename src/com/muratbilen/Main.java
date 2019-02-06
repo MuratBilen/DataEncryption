@@ -18,39 +18,80 @@ public class Main {
 
     private static final String key = "Bar12345Bar12345";
     private static final String initVector = "RandomInitVector";
-    public static void main(String[] args)
-    {
-        System.out.println("Please press the necessary number to proceed ");
-        System.out.println("1-AES password encryption");
-        System.out.println("2-SHA-256 password hashing");
-        System.out.println("3-SHA-512 password hashing");
-        System.out.println("4-MD5 password hashing");
-        System.out.println("5-PBKDF2WithHmacSHA1 hashing");
-        Scanner sc = new Scanner(System.in);
-        int selection = sc.nextInt();
-        switch (selection)
+    private static final String pepper="$eBGAea6N#7b9z$@8X``5[k49TDV[.";
+    public static void main(String[] args) throws NoSuchAlgorithmException {
+        System.out.println(pepper);
+        System.out.println("Do you want salt and pepper to be added in your password? Press 1 for yes");
+        Scanner scString = new Scanner(System.in);
+        Scanner scint=new Scanner(System.in);
+        int methodselection=scint.nextInt();
+        if (methodselection==1)
         {
-            case 1:
+            System.out.println("Please select the necessary option to proceed: ");
+            System.out.println("1-AES password encryption");
+            System.out.println("2-SHA-256 password hashing");
+            System.out.println("3-SHA-512 password hashing");
+            System.out.println("4-MD5 password hashing");
+            System.out.println("5-PBKDF2WithHmacSHA1 hashing");
+            System.out.println("6-Exit from the console");
+            int algorithmselection = scint.nextInt();
+            switch (algorithmselection)
+            {
+                case 1:
 
+                    System.out.print("Please enter your name: ");
+                    String name = scString.nextLine();
+
+                    System.out.print("Please enter your password: ");
+                    String result=encryptAES(key,initVector,scString.nextLine());
+                    System.out.println(result);
+                    break;
+                case 2:
+                    System.out.print("Please enter your name: ");
+                     name = scString.nextLine();
+                    System.out.print("Please enter your password: ");
+                     result=getSha256(scString.nextLine());
+                    System.out.println(result);
+                     break;
+                case 3:
+                    System.out.print("Please enter your name: ");
+                    name = scString.nextLine();
+                    System.out.print("Please enter your password: ");
+                    result=getSha512(scString.nextLine(), bytesToHex(getSalt()));
+                    System.out.println(result);
+                    break;
+                case 4:
+                    System.out.print("Please enter your name: ");
+                    name = scString.nextLine();
+                    System.out.print("Please enter your password: ");
+                    result=getMd5(scString.nextLine());
+                    System.out.println(result);
+                    break;
+                case 5:
+                    System.out.print("Please enter your name: ");
+                    name = scString.nextLine();
+                    System.out.print("Please enter your password: ");
+                    try {
+                        result=getPBKDF2WithHmacSHA1(scString.nextLine());
+                        System.out.println(result);
+                    } catch (InvalidKeySpecException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 6:
+                    break;
+                default:
+                    System.out.println("You have typed in the wrong number. Please try again!");
+            }
         }
+        else
+        {
 
-        //todo ADD MENU
-        String result= encryptAES(key,initVector,"some random text");
-        System.out.println(decryptAES(key,initVector,result));
-        System.out.println(getSha256("random"));
-        System.out.println(getMd5("randomized"));
-        System.out.println();
-        //todo check if sha_512 method works properly or not
-        System.out.println(getSha512("random","saltbae"));
-        try {
-            System.out.println(getPBKDF2WithHmacSHA1("random"));
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+
+
         }
     }
-    private static byte[] getSalt() throws NoSuchAlgorithmException
+    private static byte[]  getSalt() throws NoSuchAlgorithmException
     {
         //Always use a SecureRandom generator
         SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
@@ -134,17 +175,13 @@ public class Main {
     public static String getMd5(String input)
     {
         try {
-
             // Static getInstance method is called with hashing MD5
             MessageDigest md = MessageDigest.getInstance("MD5");
-
             // digest() method is called to calculate message digest
             //  of an input digest() return array of byte
             byte[] messageDigest = md.digest(input.getBytes());
-
             // Convert byte array into signum representation
             BigInteger no = new BigInteger(1, messageDigest);
-
             // Convert message digest into hex value
             String hashtext = no.toString(16);
             while (hashtext.length() < 32) {
@@ -152,8 +189,6 @@ public class Main {
             }
             return hashtext;
         }
-
-        // For specifying wrong message digest algorithms
         catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
