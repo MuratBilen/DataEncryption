@@ -1,6 +1,8 @@
 package com.muratbilen;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -11,18 +13,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.*;
 import java.util.Base64;
 import java.util.Scanner;
 
 public class Main
 {
-
-	private static final String key = "Bar12345Bar12345";
 	private static final String initVector = "RandomInitVector";
 	private static final String pepper = "$eBGAea6N#7b9z$@8X``5[k49TDV[.";
 
+
 	public static void main(String[] args) throws NoSuchAlgorithmException
 	{
+		Database db=new Database();
 		Scanner sc = new Scanner(System.in);
 		Scanner scint = new Scanner(System.in);
 		System.out.print("Please enter your name: ");
@@ -39,29 +42,38 @@ public class Main
 		int algorithmselection = sc.nextInt();
 		switch (algorithmselection) {
 			case 1:
-				encryptAES(key, initVector, sc.nextLine());
+				// TODO: 8.02.2019 Fix AES key size
+				encryptAES(initVector, password);
 				break;
 			case 2:
 				if (checkSaltOption()) {
-					System.out.println(getSha256(password, bytesToHex(getSalt())));
+					String salt = bytesToHex(getSalt());
+					System.out.println(getSha256(password, salt));
+					db.insert(name, getSha256(password, salt), salt);
 					break;
 				}
 				System.out.println(getSha256(password));
+				db.insert(name,getSha256(password));
 				break;
 			case 3:
 				if (checkSaltOption()) {
-					System.out.println(getSha512(password, bytesToHex(getSalt())));
+					String salt = bytesToHex(getSalt());
+					System.out.println(getSha512(password, salt));
+					db.insert(name, getSha512(password,salt),salt);
 					break;
 				}
 				System.out.println(getSha512(password));
+				db.insert(name, getSha512(password));
 				break;
 			case 4:
-				if (checkSaltOption())
-				{
-					System.out.println(getMd5(password,bytesToHex(getSalt())));
+				if (checkSaltOption()) {
+					String salt = bytesToHex(getSalt());
+					System.out.println(getMd5(password, salt));
+					db.insert(name,getMd5(password,salt),salt);
 					break;
 				}
 				System.out.println(getMd5(password));
+				db.insert(name,password);
 				break;
 			case 5:
 				try {
@@ -76,6 +88,8 @@ public class Main
 				System.out.println("You have typed in the wrong number. Please try again!");
 		}
 	}
+
+
 
 	private static boolean checkSaltOption()
 	{
@@ -99,15 +113,16 @@ public class Main
 		return salt;
 	}
 
-	private static String encryptAES(String key, String initVector, String value)
+	private static String encryptAES(String initVector, String value)
 	{
 		try {
 			IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-			SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
-
+			KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+			keyGen.init(16);
+			String secretKey = keyGen.generateKey().toString();
+			SecretKeySpec skeySpec = new SecretKeySpec(secretKey.getBytes("UTF-8"), "AES");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
 			cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
-
 			byte[] encrypted = cipher.doFinal(value.getBytes());
 			System.out.println("encrypted string: "
 					+ new String(Base64.getEncoder().encode(encrypted)));
@@ -119,6 +134,8 @@ public class Main
 
 		return null;
 	}
+
+
 
 	private static String decryptAES(String key, String initVector, String encrypted)
 	{
@@ -148,7 +165,6 @@ public class Main
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
-
 	}
 
 	private static String getSha256(String passwordToHash)
